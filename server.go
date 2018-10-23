@@ -19,6 +19,7 @@ type Server struct {
 	host        string
 	log         *log.Logger
 	connections map[net.Conn]struct{}
+	isClose     bool
 }
 
 func NewServer(port string) *Server {
@@ -40,6 +41,10 @@ func (s *Server) Run() {
 	defer listener.Close()
 
 	for {
+		if s.isClose {
+			break
+		}
+
 		conn, err := listener.Accept()
 		if err != nil {
 			s.log.Printf("get error on accept connection: %s", err.Error())
@@ -70,6 +75,7 @@ func (s *Server) handler(conn net.Conn) {
 //close all connections
 func (s *Server) Shutdown(ctx context.Context) {
 	s.log.Printf("shutdown ... ")
+	s.isClose = true
 	for {
 		select {
 		case <-ctx.Done():
